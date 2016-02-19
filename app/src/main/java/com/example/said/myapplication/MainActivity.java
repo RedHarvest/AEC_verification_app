@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -30,8 +31,9 @@ import android.widget.Button;
 public class MainActivity extends Activity {
 
 	Button startRec, stopRec, playBack;
-	int minBufferSizeIn;
+	int minBufferSizeIn, minBufferSizeOut;
 	AudioRecord audioRecord;
+	AudioTrack audioTrack;
 	short[] audioData;
 	Boolean recording;
 	int sampleRateInHz = 48000;
@@ -66,6 +68,17 @@ public class MainActivity extends Activity {
 				AudioFormat.CHANNEL_IN_MONO,
 				AudioFormat.ENCODING_PCM_16BIT,
 				minBufferSizeIn);
+
+		minBufferSizeOut = AudioTrack.getMinBufferSize(sampleRateInHz,
+				AudioFormat.CHANNEL_OUT_MONO,
+				AudioFormat.ENCODING_PCM_16BIT);
+		audioTrack = new AudioTrack(
+				AudioManager.STREAM_MUSIC, sampleRateInHz,
+				AudioFormat.CHANNEL_OUT_MONO,
+				AudioFormat.ENCODING_PCM_16BIT,
+				minBufferSizeOut,
+				AudioTrack.MODE_STREAM);
+		audioTrack.play();
 
 	}
 	
@@ -115,7 +128,14 @@ public class MainActivity extends Activity {
 			playBack.setEnabled(false);
 			startRec.setEnabled(true);
 			stopRec.setEnabled(false);
-			playRecord();
+			Thread playThread = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					playRecord();
+				}
+			});
+
+			playThread.start();
 		}
 
 	};
@@ -167,38 +187,33 @@ public class MainActivity extends Activity {
 		}
 	}
 
+
 	void playRecord() {
 		File file = new File(Environment.getExternalStorageDirectory(), "test.pcm");
-
-		int shortSizeInBytes = Short.SIZE / Byte.SIZE;
-
-		int bufferSizeInBytes = (int) (file.length() / shortSizeInBytes);
-		short[] audioData = new short[bufferSizeInBytes];
+		DataInputStream dataInputStream;
 
 		try {
 			FileInputStream inputStream = new FileInputStream(file);
 			BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
-			DataInputStream dataInputStream = new DataInputStream(bufferedInputStream);
+			dataInputStream = new DataInputStream(bufferedInputStream);
+			ArrayList<short[]> shortsArray = new ArrayList<>();
 
-			int i = 0;
-			while (dataInputStream.available() > 0) {
-				audioData[i] = dataInputStream.readShort();
-				i++;
+			while (dataInputStream.available() > 0){
+				short[] audioData = new short[minBufferSizeOut];
+				shortsArray.add(audioData);
+				int j = 0;
+				while (dataInputStream.available() > 0 && j < minBufferSizeOut) {
+					audioData[j] = dataInputStream.readShort();
+					j++;
+				}
 			}
-
 			dataInputStream.close();
 
-			AudioTrack audioTrack = new AudioTrack(
-					AudioManager.STREAM_MUSIC, sampleRateInHz,
-					AudioFormat.CHANNEL_OUT_MONO,
-					AudioFormat.ENCODING_PCM_16BIT,
-					bufferSizeInBytes,
-					AudioTrack.MODE_STREAM);
-			while(audioTrack.getState() != AudioTrack.STATE_INITIALIZED){
 
+			for (int i = 0; i < shortsArray.size(); ++i) {
+				audioTrack.write(shortsArray.get(i), 0, minBufferSizeOut);
 			}
-			audioTrack.play();
-			audioTrack.write(audioData, 0, bufferSizeInBytes);
+
 
 
 		} catch (FileNotFoundException e) {
@@ -206,7 +221,6 @@ public class MainActivity extends Activity {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 }
