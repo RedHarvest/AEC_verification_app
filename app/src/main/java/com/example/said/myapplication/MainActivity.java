@@ -36,8 +36,8 @@ public class MainActivity extends Activity {
 	AudioTrack audioTrack;
 	short[] audioData;
 	Boolean recording;
-	int sampleRateInHz = 48000;
-	private String TAG = "TAG";
+	int sampleRateInHz = 44100;
+	private String TAG = "MainActivity";
 
 	/**
 	 * Called when the activity is first created.
@@ -62,12 +62,6 @@ public class MainActivity extends Activity {
 				AudioFormat.ENCODING_PCM_16BIT);
 
 		audioData = new short[minBufferSizeIn];
-
-		audioRecord = new AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-				sampleRateInHz,
-				AudioFormat.CHANNEL_IN_MONO,
-				AudioFormat.ENCODING_PCM_16BIT,
-				minBufferSizeIn);
 
 		minBufferSizeOut = AudioTrack.getMinBufferSize(sampleRateInHz,
 				AudioFormat.CHANNEL_OUT_MONO,
@@ -139,7 +133,7 @@ public class MainActivity extends Activity {
 		}
 
 	};
-	
+
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	private void startRecord() {
@@ -150,8 +144,28 @@ public class MainActivity extends Activity {
 			BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
 			DataOutputStream dataOutputStream = new DataOutputStream(bufferedOutputStream);
 
-			NoiseSuppressor ns;
-			AcousticEchoCanceler aec;
+			if (audioRecord != null){
+				audioRecord.release();
+				audioRecord = null;
+			}
+			audioRecord = new AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+					sampleRateInHz,
+					AudioFormat.CHANNEL_IN_MONO,
+					AudioFormat.ENCODING_PCM_16BIT,
+					minBufferSizeIn);
+
+			AcousticEchoCanceler aec = null;
+			NoiseSuppressor ns = null;
+
+			if (AcousticEchoCanceler.isAvailable()) {
+				aec = AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
+				if (aec != null) {
+					aec.setEnabled(true);
+					Log.d(TAG, "AudioInput: AcousticEchoCanceler.isAvailable(): " + AcousticEchoCanceler.isAvailable() + "| isEnabled: " + aec.getEnabled() + "| isControling :" + aec.hasControl());
+				} else {
+					Log.e(TAG, "AudioInput: AcousticEchoCanceler is null and not enabled");
+				}
+			}
 
 			if (NoiseSuppressor.isAvailable()) {
 				ns = NoiseSuppressor.create(audioRecord.getAudioSessionId());
@@ -159,15 +173,6 @@ public class MainActivity extends Activity {
 					ns.setEnabled(true);
 				} else {
 					Log.e(TAG, "AudioInput: NoiseSuppressor is null and not enabled");
-				}
-			}
-
-			if (AcousticEchoCanceler.isAvailable()) {
-				aec = AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
-				if (aec != null) {
-					aec.setEnabled(true);
-				} else {
-					Log.e(TAG, "AudioInput: AcousticEchoCanceler is null and not enabled");
 				}
 			}
 			audioRecord.startRecording();
@@ -181,7 +186,8 @@ public class MainActivity extends Activity {
 
 			audioRecord.stop();
 			dataOutputStream.close();
-
+			if(aec !=null) aec.release();
+			if(ns !=null) ns.release();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
