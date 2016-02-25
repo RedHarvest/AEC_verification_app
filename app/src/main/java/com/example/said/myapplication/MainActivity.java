@@ -39,6 +39,11 @@ public class MainActivity extends Activity {
 	int sampleRateInHz = 44100;
 	private String TAG = "MainActivity";
 
+	static {
+		System.loadLibrary("nativeCalls");
+	}
+	public native String test();
+
 	/**
 	 * Called when the activity is first created.
 	 */
@@ -56,6 +61,7 @@ public class MainActivity extends Activity {
 		playBack.setEnabled(false);
 		startRec.setEnabled(true);
 		stopRec.setEnabled(false);
+		stopRec.setText(test());
 
 		minBufferSizeIn = AudioRecord.getMinBufferSize(sampleRateInHz,
 				AudioFormat.CHANNEL_IN_MONO,
