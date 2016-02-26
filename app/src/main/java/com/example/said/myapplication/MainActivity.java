@@ -42,7 +42,8 @@ public class MainActivity extends Activity {
 	static {
 		System.loadLibrary("nativeCalls");
 	}
-	public native String test();
+	public native void start();
+	public native void stop();
 
 	/**
 	 * Called when the activity is first created.
@@ -58,10 +59,10 @@ public class MainActivity extends Activity {
 		startRec.setOnClickListener(startRecOnClickListener);
 		stopRec.setOnClickListener(stopRecOnClickListener);
 		playBack.setOnClickListener(playBackOnClickListener);
-		playBack.setEnabled(false);
-		startRec.setEnabled(true);
-		stopRec.setEnabled(false);
-		stopRec.setText(test());
+//		playBack.setEnabled(false);
+//		startRec.setEnabled(true);
+//		stopRec.setEnabled(false);
+////		stopRec.setText(start());
 
 		minBufferSizeIn = AudioRecord.getMinBufferSize(sampleRateInHz,
 				AudioFormat.CHANNEL_IN_MONO,
@@ -87,15 +88,16 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onClick(View arg0) {
-			playBack.setEnabled(false);
-			startRec.setEnabled(false);
-			stopRec.setEnabled(true);
+//			playBack.setEnabled(false);
+//			startRec.setEnabled(false);
+//			stopRec.setEnabled(true);
 			Thread recordThread = new Thread(new Runnable() {
 
 				@Override
 				public void run() {
 					recording = true;
-					startRecord();
+//					startRecord();
+					start();
 				}
 
 			});
@@ -111,10 +113,11 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onClick(View arg0) {
-			playBack.setEnabled(true);
-			startRec.setEnabled(false);
-			stopRec.setEnabled(false);
+//			playBack.setEnabled(true);
+//			startRec.setEnabled(false);
+//			stopRec.setEnabled(false);
 			recording = false;
+			stop();
 		}
 	};
 
@@ -125,9 +128,9 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onClick(View v) {
-			playBack.setEnabled(false);
-			startRec.setEnabled(true);
-			stopRec.setEnabled(false);
+//			playBack.setEnabled(false);
+//			startRec.setEnabled(true);
+//			stopRec.setEnabled(false);
 			Thread playThread = new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -143,7 +146,7 @@ public class MainActivity extends Activity {
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 	private void startRecord() {
-		File file = new File(Environment.getExternalStorageDirectory(), "test.pcm");
+		File file = new File(Environment.getExternalStorageDirectory(), "start.pcm");
 
 		try {
 			FileOutputStream outputStream = new FileOutputStream(file);
@@ -208,22 +211,29 @@ public class MainActivity extends Activity {
 			FileInputStream inputStream = new FileInputStream(file);
 			BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
 			dataInputStream = new DataInputStream(bufferedInputStream);
-			ArrayList<short[]> shortsArray = new ArrayList<>();
+//			ArrayList<short[]> shortsArray = new ArrayList<>();
+			ArrayList<byte[]> bytesArray = new ArrayList<>();
 
 			while (dataInputStream.available() > 0){
-				short[] audioData = new short[minBufferSizeOut];
-				shortsArray.add(audioData);
+//				short[] audioData = new short[minBufferSizeOut];
+				byte[] audioData = new byte[minBufferSizeOut];
+//				shortsArray.add(audioData);
+				bytesArray.add(audioData);
 				int j = 0;
 				while (dataInputStream.available() > 0 && j < minBufferSizeOut) {
-					audioData[j] = dataInputStream.readShort();
+//					audioData[j] = dataInputStream.readShort();
+					audioData[j] = dataInputStream.readByte();
 					j++;
 				}
 			}
 			dataInputStream.close();
 
 
-			for (int i = 0; i < shortsArray.size(); ++i) {
-				audioTrack.write(shortsArray.get(i), 0, minBufferSizeOut);
+//			for (int i = 0; i < shortsArray.size(); ++i) {
+//				audioTrack.write(shortsArray.get(i), 0, minBufferSizeOut);
+//			}
+			for (int i = 0; i < bytesArray.size(); i++) {
+				audioTrack.write(bytesArray.get(i), 0, minBufferSizeOut);
 			}
 
 

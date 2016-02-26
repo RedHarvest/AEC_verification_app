@@ -16,6 +16,7 @@ model {
 
     android.ndk {
         moduleName "nativeCalls"
+        ldLibs.add('log')
     }
 
     android.buildTypes {
