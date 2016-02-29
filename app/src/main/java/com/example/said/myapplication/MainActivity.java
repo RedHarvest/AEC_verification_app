@@ -45,6 +45,8 @@ public class MainActivity extends Activity {
 	public native void start();
 	public native void stop();
 
+	AudioManager manager;
+
 	/**
 	 * Called when the activity is first created.
 	 */
@@ -81,6 +83,11 @@ public class MainActivity extends Activity {
 				AudioTrack.MODE_STREAM);
 		audioTrack.play();
 
+		manager = (AudioManager) getSystemService(AUDIO_SERVICE);
+		manager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+//		manager.setSpeakerphoneOn(true);
+//		manager.
+
 	}
 	
 	OnClickListener startRecOnClickListener
@@ -91,6 +98,8 @@ public class MainActivity extends Activity {
 //			playBack.setEnabled(false);
 //			startRec.setEnabled(false);
 //			stopRec.setEnabled(true);
+//			manager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+			manager.setSpeakerphoneOn(true);
 			Thread recordThread = new Thread(new Runnable() {
 
 				@Override
@@ -117,6 +126,8 @@ public class MainActivity extends Activity {
 //			startRec.setEnabled(false);
 //			stopRec.setEnabled(false);
 			recording = false;
+//			manager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+			manager.setSpeakerphoneOn(true);
 			stop();
 		}
 	};

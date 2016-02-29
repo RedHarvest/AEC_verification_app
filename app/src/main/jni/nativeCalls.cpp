@@ -2,7 +2,7 @@
 #include<string.h>
 #include <stdio.h>
 #include <android/log.h>
-#include <sys/types.h>
+#include <sys/resource.h>
 static void log(android_LogPriority priority, const char * string, ...) {
 	char buffer[1000 * 16];
 	va_list argptr;
@@ -123,6 +123,7 @@ Java_com_example_said_myapplication_MainActivity_stop(JNIEnv *env, jobject insta
 }
 
 JNIEXPORT void JNICALL Java_com_example_said_myapplication_MainActivity_start(JNIEnv *jni_env, jobject obj) {
+	setpriority(PRIO_PROCESS, 0, -20);
 	jmethodID constructor_id=0;
 	jmethodID min_buff_size_id;
 	int buff_size, read_chunk_size, rate = 48000;
